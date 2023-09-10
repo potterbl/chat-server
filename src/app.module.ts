@@ -17,6 +17,9 @@ import { AppGateway } from './app.gateway';
             username: process.env.USERNAME,
             password: process.env.PASSWORD,
             entities: [User, Chat, Message],
+            ssl: {
+                rejectUnauthorized: false,
+            },
             synchronize: true
         }),
         AuthModule,
