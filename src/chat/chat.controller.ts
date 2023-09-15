@@ -10,22 +10,22 @@ export class ChatController {
     }
 
     @Post('/create')
-    createChat(@Body('between') between) {
-        return this.chatService.createChat(between)
+    createChat(@Body('usersId') usersId: number[], @Body('token') token){
+        return this.chatService.createChat(usersId, token)
     }
 
-    @Post('/message')
-    sendMessage(@Body() message: MessageDto){
-        return this.chatService.sendMessage(message)
+    @Post('/sendMessage')
+    sendMessage(@Body() message: MessageDto, @Body('token') token){
+        return this.chatService.sendMessage(message, token)
     }
 
     @Post('/user')
-    getAllChatsForUser(@Body('userId') userId: number) {
-        return this.chatService.getAllChatsForUser(userId);
+    getAllChats(@Body('token') token){
+        return this.chatService.getAllChats(token)
     }
 
-    @Post('/:chat')
-    getChat(@Param('chat') chat: number, @Body('userId') userId: number){
-        return this.chatService.getChat(chat, userId)
-    }
+    // @Post('/:chatId')
+    // getChat(@Param('chatId') chatId, @Body('userId') userId, @Body('token') token){
+    //     return this.chatService.getChat(chatId, token)
+    // }
 }

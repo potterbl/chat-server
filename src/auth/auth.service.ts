@@ -2,9 +2,11 @@ import {Injectable, UnauthorizedException} from '@nestjs/common';
 import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {User} from "../entities/user.entity";
-import {UserDto} from "../dto/user.dto";
-import {NotFoundError} from "rxjs";
 import * as jwt from 'jsonwebtoken'
+import { config } from 'dotenv'
+import * as process from "process";
+import {NotFoundError} from "rxjs";
+config()
 
 @Injectable()
 export class AuthService {
@@ -14,22 +16,24 @@ export class AuthService {
     ) {
     }
 
-    async getAll(limit: number){
-        try{
-            return this.users.find({
-                take: limit,
-                select: ['id', 'name']
+    async getAll() {
+        try {
+            return await this.users.find({
+                select: {
+                    id: true,
+                    name: true
+                }
             })
         } catch (e) {
             throw new Error(e)
         }
     }
 
-    async createUser(user: UserDto){
-        try{
-            const candidate = await this.users.findOneBy({login: user.login})
+    async createUser(user) {
+        try {
+            const candidate = await this.users.findOne({where: {login: user.login}})
 
-            if(!candidate){
+            if (!candidate) {
                 const newUser = await this.users.save(user)
 
                 const payload = {
@@ -37,48 +41,46 @@ export class AuthService {
                     name: newUser.name
                 }
 
-                return {token: jwt.sign(payload, 'secret-test', {expiresIn: '14d'})}
-            } else {
-                throw new Error('Аккаунт уже существует')
-            }
-        } catch (e) {
-            throw new Error(e)
-        }
-    }
-
-    async login(user: UserDto){
-        try{
-            const candidate = await this.users.findOneBy({login: user.login})
-
-            if(candidate){
-                if(candidate.password == user.password){
-                    const payload = {
-                        id: candidate.id,
-                        name: candidate.name
-                    }
-
-                    return {token: jwt.sign(payload, 'secret-test', {expiresIn: '14d'})}
-                } else {
-                    throw new UnauthorizedException()
-                }
-            } else {
-                throw new NotFoundError('Пользователь не найден')
-            }
-        } catch (e) {
-            throw new Error(e)
-        }
-    }
-
-    async auth(token){
-        try{
-            const candidate = jwt.verify(token, 'secret-test')
-
-            if(candidate){
-                return candidate
+                return {token: jwt.sign(payload, process.env.SECRET_KEY, {expiresIn: '14d'})}
             } else {
                 throw new UnauthorizedException()
             }
-        } catch(e) {
+        } catch (e) {
+            throw new Error(e)
+        }
+    }
+
+    async login(user) {
+        try {
+            const candidate = await this.users.findOne({
+                where: {
+                    login: user.login
+                }
+            })
+
+            if (candidate) {
+                const payload = {
+                    id: candidate.id,
+                    name: candidate.name
+                }
+
+                return {token: jwt.sign(payload, process.env.SECRET_KEY, {expiresIn: '14d'})}
+            }
+        } catch (e) {
+            throw new Error(e)
+        }
+    }
+
+    async auth(token) {
+        try {
+            const candidate = jwt.verify(token, process.env.SECRET_KEY)
+
+            if (candidate) {
+                return candidate
+            } else {
+                throw new NotFoundError("User wasn't found")
+            }
+        } catch (e) {
             throw new Error(e)
         }
     }

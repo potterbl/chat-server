@@ -6,6 +6,8 @@ import {Chat} from "./entities/chat.entity";
 import {User} from "./entities/user.entity";
 import {Message} from "./entities/message.entity";
 import { AppGateway } from './app.gateway';
+import { config } from 'dotenv'
+config()
 
 @Module({
     imports: [
@@ -17,9 +19,9 @@ import { AppGateway } from './app.gateway';
             username: process.env.USERNAME,
             password: process.env.PASSWORD,
             entities: [User, Chat, Message],
-            ssl: {
-                rejectUnauthorized: false,
-            },
+            // ssl: {
+            //     rejectUnauthorized: false,
+            // },
             synchronize: true
         }),
         AuthModule,

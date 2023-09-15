@@ -1,6 +1,7 @@
 import {Body, Controller, Get, Param, Post} from '@nestjs/common';
-import {UserDto} from "../dto/user.dto";
+import {UserSignDto} from "../dto/userSign.dto";
 import {AuthService} from "./auth.service";
+import {UserLoginDto} from "../dto/userLogin.dto";
 
 @Controller('auth')
 export class AuthController {
@@ -10,18 +11,18 @@ export class AuthController {
     ) {
     }
 
-    @Get('/:limit')
-    getAll(@Param('limit') limit){
-        return this.authService.getAll(limit)
+    @Get('/')
+    getAll(){
+        return this.authService.getAll()
     }
 
     @Post('/sign')
-    sign(@Body() user: UserDto){
+    createUser (@Body() user: UserSignDto) {
         return this.authService.createUser(user)
     }
 
     @Post('/login')
-    login(@Body() user: UserDto){
+    login(@Body() user: UserLoginDto){
         return this.authService.login(user)
     }
 
