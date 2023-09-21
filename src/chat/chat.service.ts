@@ -65,7 +65,16 @@ export class ChatService {
                     this.appGateway.server.emit(`user_${userId}`, 'update chats')
                 })
 
-                return await this.chat.save(chat)
+                const createdChat = await this.chat.save(chat)
+
+
+                return {
+                    ...createdChat,
+                    users: createdChat.users.map(user => ({
+                        id: user.id,
+                        name: user.name
+                    }))
+                };
             } else {
                 throw new UnauthorizedException()
             }
@@ -80,8 +89,6 @@ export class ChatService {
 
             if(message.from === candidateUser.id){
                 const candidateChat = await this.chat.findOne({where: { id: message.chat }, relations: {users: true}})
-
-                console.log(candidateChat)
 
                 if(!candidateChat.users.some(user => user.id === message.from)){
                     throw new UnauthorizedException()
@@ -101,7 +108,9 @@ export class ChatService {
                         this.appGateway.server.emit(`user_${userId}`, candidateChat.id)
                     })
 
-                    return await this.message.save(newMessage)
+                    await this.message.save(newMessage)
+
+                    return {message: "Message was sent"}
                 } else {
                     throw new NotFoundError("Chat wasn't found")
                 }
@@ -112,37 +121,6 @@ export class ChatService {
             throw new Error(e)
         }
     }
-    //
-    // async getChat(chatId, token){
-    //     try{
-    //         const candidateUser = jwt.verify(token, process.env.SECRET_KEY)
-    //
-    //         if(candidateUser){
-    //             const candidateChat = await this.chat.findOne({relations: {users: true, messages: true}, where: {id: chatId}})
-    //
-    //             if(!candidateChat.users.some(user => user.id === candidateUser.id)){
-    //                 throw new UnauthorizedException()
-    //             }
-    //             if(candidateChat){
-    //                 const chatWithFilteredUsers = {
-    //                     ...candidateChat,
-    //                     users: candidateChat.users.map(user => ({
-    //                         id: user.id,
-    //                         name: user.name,
-    //                     })),
-    //                 };
-    //
-    //                 return chatWithFilteredUsers;
-    //             } else {
-    //                 throw new Error()
-    //             }
-    //         } else {
-    //             throw new UnauthorizedException()
-    //         }
-    //     } catch (e) {
-    //         throw new Error(e)
-    //     }
-    // }
 
     async getAllChats(token) {
         try {
@@ -166,14 +144,15 @@ export class ChatService {
                 });
 
                 filteredChats.sort((chat1, chat2) => {
-                    const lastMessage1 = chat1.messages[chat1.messages.length -1];
-                    const lastMessage2 = chat2.messages[chat2.messages.length -1];
+                    const lastMessage1 = chat1.messages.length > 0 ? chat1.messages[chat1.messages.length - 1] : null;
+                    const lastMessage2 = chat2.messages.length > 0 ? chat2.messages[chat2.messages.length - 1] : null;
 
-                    const createdAt1 = lastMessage1 ? lastMessage1.createdAt.getTime() : 0;
-                    const createdAt2 = lastMessage2 ? lastMessage2.createdAt.getTime() : 0;
+                    const createdAt1 = lastMessage1 ? lastMessage1.createdAt.getTime() : chat1.createdAt.getTime();
+                    const createdAt2 = lastMessage2 ? lastMessage2.createdAt.getTime() : chat2.createdAt.getTime();
 
                     return createdAt2 - createdAt1;
                 });
+
 
                 return filteredChats.map(chat => ({
                     ...chat,
