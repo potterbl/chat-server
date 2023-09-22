@@ -100,6 +100,8 @@ export class ChatService {
                     newMessage.from = message.from
                     newMessage.chat = candidateChat
 
+                    await this.message.save(newMessage)
+
                     const users = candidateChat.users.map(user => {
                         return user.id
                     })
@@ -107,8 +109,6 @@ export class ChatService {
                     users.forEach(userId => {
                         this.appGateway.server.emit(`user_${userId}`, candidateChat.id)
                     })
-
-                    await this.message.save(newMessage)
 
                     return {message: "Message was sent"}
                 } else {
