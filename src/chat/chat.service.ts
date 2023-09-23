@@ -168,11 +168,11 @@ export class ChatService {
                     }
                 })
 
+                await this.message.save(candidateMessage)
+
                 candidateChat.users.forEach(user => {
                     this.appGateway.server.emit(`user_${user.id}`, candidateChat.id)
                 })
-
-                await this.message.save(candidateMessage)
 
                 return {message: 'updated'}
             } else {
