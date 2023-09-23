@@ -1,5 +1,15 @@
-import {Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn} from "typeorm";
+import {
+    Column,
+    CreateDateColumn,
+    Entity,
+    JoinTable,
+    ManyToMany,
+    ManyToOne,
+    OneToMany,
+    PrimaryGeneratedColumn
+} from "typeorm";
 import {Chat} from "./chat.entity";
+import {User} from "./user.entity";
 
 @Entity()
 export class Message{
@@ -17,4 +27,11 @@ export class Message{
 
     @ManyToOne(() => Chat, (chat) => chat.messages)
     chat: Chat;
+
+    @Column({default: false})
+    seen: boolean;
+
+    @ManyToOne(() => Message, (message) => message.replied, {nullable: true})
+    @JoinTable()
+    replied: Message;
 }

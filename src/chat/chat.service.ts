@@ -88,7 +88,7 @@ export class ChatService {
             const candidateUser = jwt.verify(token, process.env.SECRET_KEY)
 
             if(message.from === candidateUser.id){
-                const candidateChat = await this.chat.findOne({where: { id: message.chat }, relations: {users: true}})
+                const candidateChat = await this.chat.findOne({where: { id: message.chat }, relations: {users: true, messages: true}})
 
                 if(!candidateChat.users.some(user => user.id === message.from)){
                     throw new UnauthorizedException()
@@ -99,6 +99,22 @@ export class ChatService {
                     newMessage.message = message.message
                     newMessage.from = message.from
                     newMessage.chat = candidateChat
+
+                    if(message.replied){
+                        const candidateMessage = await this.message.findOne({
+                            where: {
+                                id: message.replied
+                            }
+                        })
+
+                        if(!candidateChat.messages.some(message => message.id === candidateMessage.id)){
+                            throw new NotFoundError("Message wasn't found in this chat")
+                        }
+
+                        newMessage.replied = candidateMessage
+                    } else {
+                        newMessage.replied = null
+                    }
 
                     await this.message.save(newMessage)
 
@@ -122,13 +138,58 @@ export class ChatService {
         }
     }
 
+    async seenMessage(messageId, token) {
+        try {
+            const candidate = jwt.verify(token, process.env.SECRET_KEY)
+            const candidateUser = await this.user.findOne({
+                where: {
+                    id: candidate.id
+                }
+            })
+
+            if(candidateUser){
+                const candidateMessage = await this.message.findOne({
+                    relations: {
+                        chat: true
+                    },
+                    where: {
+                        id: messageId
+                    }
+                })
+
+                candidateMessage.seen = true
+
+                const candidateChat = await this.chat.findOne({
+                    where: {
+                        id: candidateMessage.chat.id
+                    },
+                    relations: {
+                        users: true
+                    }
+                })
+
+                candidateChat.users.forEach(user => {
+                    this.appGateway.server.emit(`user_${user.id}`, candidateChat.id)
+                })
+
+                await this.message.save(candidateMessage)
+
+                return {message: 'updated'}
+            } else {
+                throw new UnauthorizedException()
+            }
+        } catch (e) {
+            throw new Error(e)
+        }
+    }
+
     async getAllChats(token) {
         try {
             const candidate = jwt.verify(token, process.env.SECRET_KEY);
 
             if (candidate) {
                 const chats = await this.chat.find({
-                    relations: { users: true, messages: true },
+                    relations: ['users', 'messages', 'messages.replied'],
                 });
 
                 const filteredChats = chats.filter(chat =>
@@ -159,7 +220,7 @@ export class ChatService {
                     users: chat.users.map(user => ({
                         id: user.id,
                         name: user.name,
-                    })),
+                    }))
                 }));
             } else {
                 throw new UnauthorizedException();
