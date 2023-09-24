@@ -76,7 +76,17 @@ export class AuthService {
             const candidate = jwt.verify(token, process.env.SECRET_KEY)
 
             if (candidate) {
-                return candidate
+                const candidateUser = await this.users.findOne({
+                    where: {
+                        id: candidate.id
+                    }
+                })
+
+                if(candidateUser){
+                    return candidate
+                } else {
+                    throw new UnauthorizedException()
+                }
             } else {
                 throw new NotFoundError("User wasn't found")
             }

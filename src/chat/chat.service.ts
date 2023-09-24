@@ -54,10 +54,11 @@ export class ChatService {
                     throw new Error('Chat already exists');
                 }
 
-                const createdChat = await this.chat.save(chat)
 
                 const chat = new Chat()
                 chat.users = users
+
+                const createdChat = await this.chat.save(chat)
 
                 const usersSend = chat.users.map(user => {
                     return user.id
