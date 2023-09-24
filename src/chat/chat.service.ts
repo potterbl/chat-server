@@ -54,6 +54,8 @@ export class ChatService {
                     throw new Error('Chat already exists');
                 }
 
+                const createdChat = await this.chat.save(chat)
+
                 const chat = new Chat()
                 chat.users = users
 
@@ -64,9 +66,6 @@ export class ChatService {
                 usersSend.forEach(userId => {
                     this.appGateway.server.emit(`user_${userId}`, 'update chats')
                 })
-
-                const createdChat = await this.chat.save(chat)
-
 
                 return {
                     ...createdChat,
