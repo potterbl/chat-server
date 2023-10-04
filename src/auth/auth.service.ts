@@ -6,13 +6,15 @@ import * as jwt from 'jsonwebtoken'
 import { config } from 'dotenv'
 import * as process from "process";
 import {NotFoundError} from "rxjs";
+import {AppGateway} from "../app.gateway";
 config()
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectRepository(User)
-        private users: Repository<User>
+        private users: Repository<User>,
+        private readonly appGateway: AppGateway
     ) {
     }
 
@@ -40,6 +42,8 @@ export class AuthService {
                     id: newUser.id,
                     name: newUser.name
                 }
+
+                this.appGateway.usersUpdate()
 
                 return {token: jwt.sign(payload, process.env.SECRET_KEY, {expiresIn: '14d'})}
             } else {
@@ -78,7 +82,8 @@ export class AuthService {
             if (candidate) {
                 const candidateUser = await this.users.findOne({
                     where: {
-                        id: candidate.id
+                        id: candidate.id,
+                        name: candidate.name
                     }
                 })
 

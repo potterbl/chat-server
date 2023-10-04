@@ -65,7 +65,7 @@ export class ChatService {
                 })
 
                 usersSend.forEach(userId => {
-                    this.appGateway.server.emit(`user_${userId}`, 'update chats')
+                    this.appGateway.chatsUpdate(userId)
                 })
 
                 return {
@@ -123,7 +123,7 @@ export class ChatService {
                     })
 
                     users.forEach(userId => {
-                        this.appGateway.server.emit(`user_${userId}`, candidateChat.id)
+                        this.appGateway.chatsUpdate(userId)
                     })
 
                     return {message: "Message was sent"}
@@ -171,7 +171,7 @@ export class ChatService {
                 await this.message.save(candidateMessage)
 
                 candidateChat.users.forEach(user => {
-                    this.appGateway.server.emit(`user_${user.id}`, candidateChat.id)
+                    this.appGateway.chatsUpdate(user.id)
                 })
 
                 return {message: 'updated'}
